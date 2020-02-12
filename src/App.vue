@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <HelloWorld msg="To-do-app"/>
+    <HelloWorld msg="Handlingslista"/>
     <ToDo/>
   </div>
 </template>
