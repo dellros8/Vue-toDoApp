@@ -10,7 +10,7 @@
         <div class="eachTaskDiv" v-for="(task, index) in arrayOfTasks" v-bind:key="index">
             <div class="eachTask">
                 <p>{{ task.name }}</p>
-                <button @click="onDone(task.name, index)">Check!</button>
+                <button @click="onDone(task, index)">Check!</button>
             </div>
         </div>
       </div>
@@ -19,7 +19,7 @@
         <div class="eachTaskDiv" v-for="(task, index) in doneTasks" v-bind:key="index">
             <div class="eachTask">
                 <p>{{ task.name }}</p>
-                <button @click="onRemove(task.name, index)">Ta bort</button>
+                <button @click="onRemove(task, index)">Ta bort</button>
             </div>
         </div>
         <div>
@@ -31,6 +31,9 @@
 </template>
 
 <script>
+
+import database from '../firebase.js';
+
 export default {
   name: "ToDo",
   props: {},
@@ -40,7 +43,8 @@ export default {
           arrayOfTasks: [
           ],
           doneTasks: [
-          ]
+          ],
+          database: database
       }
   },
   methods: {
@@ -50,19 +54,43 @@ export default {
       },
       onAdd(e) {
           e.preventDefault();
-          this.arrayOfTasks.push({name: this.inputValue})
+          this.database.ref('handlingslista').push({
+            vara: this.inputValue
+          });
           this.inputValue = "";
       },
-      onDone(taskname, i) {
-          this.arrayOfTasks.splice(i, 1)
-          this.doneTasks.push({name: taskname})
+      onDone(task) {
+          this.database.ref('handlingslista/' + task.key).remove();
+          this.database.ref('handlingslistaklar').push({
+            vara: task.name
+          });
       },
-      onRemove(taskname, i) {
-        this.doneTasks.splice(i, 1)
+      onRemove(task) {
+        this.database.ref('handlingslistaklar/' + task.key).remove();
       },
       onRemoveAll() {
-        this.doneTasks = []
+        this.database.ref('handlingslistaklar').remove();
       }
+  },
+  mounted(){
+
+    let self = this;
+
+    this.database.ref('handlingslista').on('value', function(snapshot) {
+      let newArray = []
+       snapshot.forEach(function(childSnapshot) {
+         newArray.push({ name: childSnapshot.val().vara, key: childSnapshot.key })
+        });
+      self.arrayOfTasks = newArray
+    });
+
+    this.database.ref('handlingslistaklar').on('value', function(snapshot) {
+      let newArray = []
+       snapshot.forEach(function(childSnapshot) {
+         newArray.push({ name: childSnapshot.val().vara, key: childSnapshot.key })
+        });
+      self.doneTasks = newArray
+    });
   }
 };
 </script>
@@ -132,4 +160,16 @@ h4 {
   margin-top: 10px;
   border-radius: 5px;
 }
+
+@media screen and (max-width: 768px) {
+  #toDoWrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+  .toDoCol {
+    margin-bottom: 50px;
+  }
+}
+
+
 </style>
